@@ -1,6 +1,6 @@
 from app.config import BOT_TOKEN
 from aiogram import Bot, Dispatcher, types
-from app.handlers import start, help
+from app.handlers import start, help, find
 import asyncio
 
 
@@ -11,6 +11,7 @@ async def main():
         dp = Dispatcher()
         dp.include_router(start.router)
         dp.include_router(help.router)
+        dp.include_router(find.router)
 
         print("Бот запущен")
         await dp.start_polling(bot)
