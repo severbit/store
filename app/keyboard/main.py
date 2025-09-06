@@ -1,8 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
  
 kb = [
-    [KeyboardButton(text="Найти")],
-    [KeyboardButton(text="Добавить"), KeyboardButton(text="Изменить")],
+    [KeyboardButton(text="Найти")]
 ] 
 
 kb = ReplyKeyboardMarkup(
@@ -13,7 +12,6 @@ kb = ReplyKeyboardMarkup(
 
 search_options_kb = [
     [KeyboardButton(text="По названию 🪧"), KeyboardButton(text="По артикулу 📃")],
-    [KeyboardButton(text="По местоположению 🗺")],
     [KeyboardButton(text="Отмена 🔴")]
 ]
 

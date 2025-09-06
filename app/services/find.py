@@ -38,26 +38,17 @@ def find(input_str: str, method: Literal["name", "code"]) -> List[Dict[str, Any]
                         res.append(product)
                 
                 elif method == "code":
-                    # Проверяем все возможные ключи для кода
-                    code_keys = ["pin_code", "code", "product_code", "sku", "id"]
-                    found_code = None
-                    
-                    for key in code_keys:
-                        if key in product:
-                            code_value = product[key]
-                            if isinstance(code_value, str) and code_value.strip():
-                                found_code = code_value.lower()
-                                break
-                            elif isinstance(code_value, (int, float)):
-                                found_code = str(code_value).lower()
-                                break
-                    
-                    if not found_code:
-                        print(f"⚠️ Продукт #{i} не содержит код")
+                    if "pin_code" not in product:
+                        print(f"⚠️ Продукт #{i} нет ключа 'pin_code'")
                         continue
                     
-                    if search_term in found_code:
-                        print(f"✅ Найдено совпадение кода в продукте #{i}: {found_code}")
+                    product_code = product["pin_code"]
+                    if not isinstance(product_code, str):
+                        product_code = str(product_code)
+                        print(f"ℹ️ Продукт #{i} код преобразовано в строку")
+                    
+                    if search_term in product_code.lower():
+                        print(f"✅ Найдено совпадение в продукте #{i}: {product_code}")
                         res.append(product)
                         
             except Exception as e:

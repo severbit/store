@@ -6,10 +6,12 @@ from app.keyboard.main import search_options_kb, kb, search_again_kb
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from app.services.find import find
+import math 
+
 class Find(StatesGroup):
     waiting_for_option = State()
     waiting_for_input = State()
-
+    waiting_for_article = State()
 router = Router()
 
 @router.message(F.text == "Найти")
@@ -28,12 +30,8 @@ async def search_by_name(message: Message, state: FSMContext):
 @router.message(Find.waiting_for_option, F.text == "По артикулу 📃")
 async def search_by_article(message: Message, state: FSMContext):
     await message.answer("🔍 Введите артикул товара:", reply_markup=ReplyKeyboardRemove())
-    await state.clear()
+    await state.set_state(Find.waiting_for_article)
 
-@router.message(Find.waiting_for_option, F.text == "По местоположению 🗺")
-async def search_by_location(message: Message, state: FSMContext):
-    await message.answer("📍 Введите местоположение:", reply_markup=ReplyKeyboardRemove())
-    await state.clear()
 
 @router.message(Find.waiting_for_option, F.text == "Отмена 🔴")
 async def cancel_search(message: Message, state: FSMContext):
@@ -46,7 +44,7 @@ async def result(message: Message, state: FSMContext):
     results = find(search_query, "name")
     print("Поиск начался")
     if not results:
-        await message.answer("❌ Ничего не найдено")
+        await message.answer("❌ Ничего не найдено", reply_markup=search_again_kb)
         await state.clear()
         return
     
@@ -55,16 +53,10 @@ async def result(message: Message, state: FSMContext):
     
     for i, product in enumerate(results, 1):
         product_text = f"{i}. 📦 {product['name']}\n"
-        product_text += f"   Код: {product.get('pin_code', 'НЕТ')}\n"
-        product_text += f"   Цена: {product.get('primary_price', 'НЕТ')}\n\n"
-        
-        # Если добавление нового продукта превысит лимит - отправляем текущую часть
-        if len(response) + len(product_text) > 4000:
-            await message.answer(response, reply_markup=search_again_kb)
-            response = ""  # Начинаем новую часть
-        
+        product_text += f"   Код: {product.get('pin_code', 'Не указана')}\n"
+        product_text += f"   Цена по складу: {product.get('primary_price', 'Не указана')}\n\n"
+        product_text += f"   Количество: {product.get('count', 'Не указана')}\n\n"
         response += product_text
-    
     # Отправляем остаток
     if response:
         await message.answer(response, reply_markup=search_again_kb)
@@ -76,3 +68,29 @@ async def result(message: Message, state: FSMContext):
 async def search_again(message: Message, state: FSMContext):
     await message.answer("Выберите метод поиска:", reply_markup=search_options_kb)
     await state.set_state(Find.waiting_for_option)
+
+@router.message(Find.waiting_for_article, F.text)
+async def result_by_article(message: Message, state: FSMContext):
+    print("Поиск по артикулу")
+    search_query = message.text.strip()
+    results = find(search_query, "code")
+    print("Поиск начался")
+    if not results:
+        await message.answer("❌ Ничего не найдено", reply_markup=search_again_kb)
+        await state.clear()
+        return
+    
+    # Разбиваем результат на части по 4000 символов
+    response = "🔍 Найдено:\n\n"
+    
+    for i, product in enumerate(results, 1):
+        product_text = f"{i}. 📦 {product['name']}\n"
+        product_text += f"   Код: {product.get('pin_code', 'Не указана')}\n"
+        product_text += f"   Цена по складу: {product.get('primary_price', 'Не указана')}\n\n"
+        product_text += f"   Количество: {product.get('count', 'Не указана')}\n\n"
+        response += product_text
+    # Отправляем остаток
+    if response:
+        await message.answer(response, reply_markup=search_again_kb)
+    
+    await state.clear()
